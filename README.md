@@ -1,4 +1,4 @@
-# WebCryptojacking.github.io
+![deployment](https://img.shields.io/github/deployments/WebCryptojacking/WebCryptojacking.github.io/github-pages?label=deployment) ![Platform](https://img.shields.io/badge/platform-Linux-important) ![license](https://img.shields.io/github/license/WebCryptojacking/WebCryptojacking.github.io) ![size](https://img.shields.io/github/repo-size/WebCryptojacking/WebCryptojacking.github.io)
 
 ## 0. Table of Contents
 
@@ -55,7 +55,7 @@ npm install
 npm run dev
 ```
 
-The bootstrap page can be visited at *<Your Server IP>* at port 9999
+The bootstrap page can be visited at *[Your Server IP]:9999*
 
 #### Build and deploy WRXProxy
 
@@ -90,5 +90,6 @@ The WebRandomX page should communicate with the proxy and mine automatically.
 
 ### Test with our pre-complied PropaMiner
 
-We provide our pre-complied PropaMiner at http://66.42.105.235:9999/
+We provide our pre-complied PropaMiner [here](http://66.42.105.235:9999/).
 
+<img width="1452" alt="example-web-miner" src="https://github.com/WebCryptojacking/WebCryptojacking.github.io/assets/149248579/37ca7d46-7eb9-42fd-847c-31be0176a49d">
