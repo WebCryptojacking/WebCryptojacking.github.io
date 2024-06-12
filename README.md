@@ -106,3 +106,5 @@ Each file contains the RandomX instructions in a WRVM program, and each line in 
 ```
 
 ## 4. Patches
+
+We release our patches for mitigating the threat of web cryptojacking enabled by PropaMiner at [WebCryptojacking.github.io/patch](https://github.com/WebCryptojacking/WebCryptojacking.github.io/tree/main/patch). It implements resetting and randomized shuffling on vectors to minimize the isomorphism of element propagations.
