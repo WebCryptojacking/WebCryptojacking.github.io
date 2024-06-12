@@ -1,0 +1,176 @@
+diff --git a/src/bytecode_machine.cpp b/src/bytecode_machine.cpp
+index 7d8e902..f9f7c2f 100644
+--- a/src/bytecode_machine.cpp
++++ b/src/bytecode_machine.cpp
+@@ -68,6 +68,8 @@ namespace randomx {
+ 			INSTR_CASE(CBRANCH)
+ 			INSTR_CASE(CFROUND)
+ 			INSTR_CASE(ISTORE)
++			INSTR_CASE(FRESET)
++			INSTR_CASE(FSHUFFLE)
+ 
+ 		case InstructionType::NOP:
+ 			break;
+@@ -472,6 +474,22 @@ namespace randomx {
+ 			return;
+ 		}
+ 
++		if (opcode < ceil_FRESET) {
++			auto dst = instr.dst % RegisterCountFlt;
++			ibc.type = InstructionType::FRESET;
++			ibc.fdst = &nreg->f[dst];
++			return;
++		}
++
++		if (opcode < ceil_FSHUFFLE) {
++			auto dst = instr.dst % RegisterCountFlt;
++			auto src = instr.src % RegisterCountFlt;
++			ibc.type = InstructionType::FSHUFFLE;
++			ibc.fdst = &nreg->f[dst];
++			ibc.fsrc = &nreg->f[src];
++			return;
++		}
++
+ 		if (opcode < ceil_NOP) {
+ 			ibc.type = InstructionType::NOP;
+ 			return;
+diff --git a/src/bytecode_machine.hpp b/src/bytecode_machine.hpp
+index 5e82e0d..5c64842 100644
+--- a/src/bytecode_machine.hpp
++++ b/src/bytecode_machine.hpp
+@@ -95,7 +95,9 @@ namespace randomx {
+ 	OPCODE_CEIL_DECLARE(CBRANCH, FSQRT_R);
+ 	OPCODE_CEIL_DECLARE(CFROUND, CBRANCH);
+ 	OPCODE_CEIL_DECLARE(ISTORE, CFROUND);
+-	OPCODE_CEIL_DECLARE(NOP, ISTORE);
++	OPCODE_CEIL_DECLARE(FRESET, ISTORE);
++	OPCODE_CEIL_DECLARE(FSHUFFLE, FRESET);
++	OPCODE_CEIL_DECLARE(NOP, FSHUFFLE);
+ #undef OPCODE_CEIL_DECLARE
+ 
+ #define RANDOMX_EXE_ARGS InstructionByteCode& ibc, int& pc, uint8_t* scratchpad, ProgramConfiguration& config
+@@ -265,6 +267,15 @@ namespace randomx {
+ 		static void exe_ISTORE(RANDOMX_EXE_ARGS) {
+ 			store64(scratchpad + ((*ibc.idst + ibc.imm) & ibc.memMask), *ibc.isrc);
+ 		}
++
++		static void exe_FRESET(RANDOMX_EXE_ARGS) {
++			*ibc.fdst = rx_set_vec_f128(0x8000000000000000, 0x7FEFFFFFFFFFFFFF);
++		}
++
++		static void exe_FSHUFFLE(RANDOMX_EXE_ARGS) {
++			*ibc.fdst = rx_shf_vec_f128(*ibc.fdst, *ibc.fsrc);
++		}
++
+ 	protected:
+ 		static rx_vec_f128 maskRegisterExponentMantissa(ProgramConfiguration& config, rx_vec_f128 x) {
+ 			const rx_vec_f128 xmantissaMask = rx_set_vec_f128(dynamicMantissaMask, dynamicMantissaMask);
+diff --git a/src/common.hpp b/src/common.hpp
+index a77feb3..9ee0471 100644
+--- a/src/common.hpp
++++ b/src/common.hpp
+@@ -70,7 +70,7 @@ namespace randomx {
+ 		RANDOMX_FREQ_INEG_R + RANDOMX_FREQ_IXOR_R + RANDOMX_FREQ_IXOR_M + RANDOMX_FREQ_IROR_R + RANDOMX_FREQ_IROL_R + RANDOMX_FREQ_ISWAP_R + \
+ 		RANDOMX_FREQ_FSWAP_R + RANDOMX_FREQ_FADD_R + RANDOMX_FREQ_FADD_M + RANDOMX_FREQ_FSUB_R + RANDOMX_FREQ_FSUB_M + \
+ 		RANDOMX_FREQ_FSCAL_R + RANDOMX_FREQ_FMUL_R + RANDOMX_FREQ_FDIV_M + RANDOMX_FREQ_FSQRT_R + RANDOMX_FREQ_CBRANCH + \
+-		RANDOMX_FREQ_CFROUND + RANDOMX_FREQ_ISTORE + RANDOMX_FREQ_NOP;
++		RANDOMX_FREQ_CFROUND + RANDOMX_FREQ_ISTORE + RANDOMX_FREQ_FRESET + RANDOMX_FREQ_FSHUFFLE + RANDOMX_FREQ_NOP;
+ 
+ 	static_assert(wtSum == 256,	"Sum of instruction frequencies must be 256.");
+ 
+diff --git a/src/configuration.h b/src/configuration.h
+index 84400dd..d5b6b07 100644
+--- a/src/configuration.h
++++ b/src/configuration.h
+@@ -116,7 +116,13 @@ Total sum of frequencies must be 256
+ #define RANDOMX_FREQ_CFROUND        1
+ 
+ //Store instruction
+-#define RANDOMX_FREQ_ISTORE        16
++#define RANDOMX_FREQ_ISTORE        8
++
++//Reset instruction
++#define RANDOMX_FREQ_FRESET         4
++
++//Shuffle instruction
++#define RANDOMX_FREQ_FSHUFFLE       4
+ 
+ //No-op instruction
+ #define RANDOMX_FREQ_NOP            0
+diff --git a/src/instruction.cpp b/src/instruction.cpp
+index 12e6f49..c66cb00 100644
+--- a/src/instruction.cpp
++++ b/src/instruction.cpp
+@@ -313,6 +313,17 @@ namespace randomx {
+ 		os << ", r" << srcIndex << std::endl;
+ 	}
+ 
++	void Instruction::h_FRESET(std::ostream& os) const {
++		auto dstIndex = dst % RegisterCountFlt;
++		os << "f" << dstIndex << std::endl;
++	}
++
++	void Instruction::h_FSHUFFLE(std::ostream& os) const {
++		auto dstIndex = dst % RegisterCountFlt;
++		auto srcIndex = src % RegisterCountFlt;
++		os << "f" << dstIndex << ", f" << srcIndex << std::endl;
++	}
++
+ 	void  Instruction::h_NOP(std::ostream& os) const {
+ 		os << std::endl;
+ 	}
+diff --git a/src/instruction.hpp b/src/instruction.hpp
+index b1863b5..5f1643e 100644
+--- a/src/instruction.hpp
++++ b/src/instruction.hpp
+@@ -69,7 +69,9 @@ namespace randomx {
+ 		CBRANCH = 26,
+ 		CFROUND = 27,
+ 		ISTORE = 28,
+-		NOP = 29,
++		FRESET = 29,
++		FSHUFFLE = 30,
++		NOP = 31,
+ 	};
+ 
+ 	class Instruction {
+@@ -141,6 +143,8 @@ namespace randomx {
+ 		void h_CBRANCH(std::ostream&) const;
+ 		void h_CFROUND(std::ostream&) const;
+ 		void h_ISTORE(std::ostream&) const;
++		void h_FRESET(std::ostream&) const;
++		void h_FSHUFFLE(std::ostream&) const;
+ 		void h_NOP(std::ostream&) const;
+ 	};
+ 
+diff --git a/src/intrin_portable.h b/src/intrin_portable.h
+index c9d4475..fa03ffa 100644
+--- a/src/intrin_portable.h
++++ b/src/intrin_portable.h
+@@ -124,6 +124,10 @@ FORCE_INLINE rx_vec_f128 rx_set1_vec_f128(uint64_t x) {
+ 	return _mm_castsi128_pd(_mm_set1_epi64x(x));
+ }
+ 
++FORCE_INLINE rx_vec_f128 rx_shf_vec_f128(rx_vec_f128 x1, rx_vec_f128 x0) {
++	return _mm_castsi128_pd(_mm_shuffle_epi8(_mm_castpd_si128(x1), _mm_castpd_si128(x0)));
++}
++
+ #define rx_xor_vec_f128 _mm_xor_pd
+ #define rx_and_vec_f128 _mm_and_pd
+ #define rx_or_vec_f128 _mm_or_pd
+@@ -492,6 +496,15 @@ FORCE_INLINE rx_vec_i128 rx_set_int_vec_i128(int _I3, int _I2, int _I1, int _I0)
+ 	return vreinterpretq_u8_s32(vld1q_s32(data));
+ };
+ 
++FORCE_INLINE rx_vec_f128 rx_shf_vec_f128(rx_vec_f128 x1, rx_vec_f128 x0) {
++	uint8x16_t table = vreinterpretq_u8_f64(x1);
++	uint8x16_t index = vreinterpretq_u8_f64(x0);
++	index = vandq_u8(index, rx_set_int_vec_i128(0x0, 0x0, 0x0, 0x0F0F0F0F));
++	index = vorrq_u8(index, rx_set_int_vec_i128(0x0F0E0D0C, 0x0B0A0908, 0x07060504, 0x00000000));
++	rx_vec_f128 result = vreinterpretq_f64_u8(vqtbl1q_u8(table, index));
++	return result;
++}
++
+ #define rx_xor_vec_i128 veorq_u8
+ 
+ FORCE_INLINE rx_vec_i128 rx_load_vec_i128(const rx_vec_i128* mem_addr) {
