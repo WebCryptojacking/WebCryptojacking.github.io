@@ -29,10 +29,11 @@ WRXProxy is a mining pool proxy running on a remote server (i.e., the C&C server
 
 #### Prerequisites
 
-* VM cloud server (for building and hosting PropaMiner): Ubuntu 22.04 LTS, with at least 1 GB memory and 2T bandwidth
-* emcc: 3.1.5
-* npm: 8.5.1
-* node: 12.22.9
+* **VM cloud server** (for building and hosting PropaMiner): at least 1 GB memory and 2 Gbps bandwidth
+* **OS**: Ubuntu 22.04.4 LTS
+* **Emscripten emcc**: 3.1.5
+* **npm**: 8.5.1
+* **Node.js**: 12.22.9
 
 #### Compile and deploy WebRandomX
 
@@ -104,3 +105,4 @@ Each file contains the RandomX instructions in a WRVM program, and each line in 
 <op code>, <dst reg>, <src reg>, <mod>, <imm>
 ```
 
+## 4. Patches
