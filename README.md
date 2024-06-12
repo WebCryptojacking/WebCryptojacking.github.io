@@ -93,3 +93,14 @@ The WebRandomX page should communicate with the proxy and mine automatically.
 We provide our pre-complied PropaMiner [here](http://66.42.105.235:9999/).
 
 <img width="1452" alt="example-web-miner" src="https://github.com/WebCryptojacking/WebCryptojacking.github.io/assets/149248579/37ca7d46-7eb9-42fd-847c-31be0176a49d">
+
+## 3. Data
+
+We provide our measurement data regarding the tested WRVM programs at [WebCryptojacking.github.io/dataset](https://github.com/WebCryptojacking/WebCryptojacking.github.io/tree/main/dataset)
+
+Each file contains the RandomX instructions in a WRVM program, and each line in a file is a specific instruction organized as:
+
+```
+<op code>, <dst reg>, <src reg>, <mod>, <imm>
+```
+
