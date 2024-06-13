@@ -56,7 +56,9 @@ npm install
 npm run dev
 ```
 
-The bootstrap page can be visited at *[Your Server IP]:9999*
+The bootstrap page can be visited at *[Your Server IP]:9999*.
+
+**Note**: The proxy server address should be configured in `src/js/job.js`.
 
 #### Build and deploy WRXProxy
 
