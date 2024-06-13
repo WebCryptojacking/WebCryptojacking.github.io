@@ -29,7 +29,7 @@ WRXProxy is a mining pool proxy running on a remote server (i.e., the C&C server
 
 #### Prerequisites
 
-* **VM cloud server** (for building and hosting PropaMiner): at least 1 GB memory and 2 Gbps bandwidth
+* **Cloud VM server** (for building and hosting PropaMiner): at least 1 GB memory and 2 Gbps bandwidth
 * **OS**: Ubuntu 22.04.4 LTS
 * **Emscripten emcc**: 3.1.5
 * **npm**: 8.5.1
